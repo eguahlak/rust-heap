@@ -1,5 +1,5 @@
 [package]
-name = "program"
+name = "rust-heap"
 version = "0.1.0"
 authors = ["Anders Kalhauge <anders@kalhauge.dk>"]
 edition = "2018"
