@@ -21,65 +21,57 @@ impl<T> Heap<T> where T: PartialOrd + fmt::Debug + std::clone::Clone {
     fn new() -> Heap<T> {
         Heap { data : Vec::new(), capacity : 0 }
         }
+
     fn from_vec(data: Vec<T>) -> Heap<T> {
         let mut heap = Heap { data, capacity : 0 };
-        loop {
-            let len = heap.data.len();
-            if len == heap.capacity { break; }
-            heap.swim(heap.capacity);
+        (0 .. heap.data.len()).for_each(|i| {
+            heap.swim(i);
             heap.capacity += 1;
             println!("*** {}", heap);
-            }
+        });
         heap
         }
-    fn left_of(index: usize) -> usize { 2*(index + 1) - 1 }
-    fn right_of(index: usize) -> usize { 2*(index + 1) }
+   
+    fn children_of(index: usize) -> (usize, usize) { 
+        let u = 2*(index + 1);
+        (u - 1, u)
+    }
+    
     fn parent_of(index: usize) -> usize { (index + 1)/2 - 1 }
 
     fn swim(&mut self, index: usize) {
         if index == 0 { return; }
         let parent_index = Heap::<T>::parent_of(index);
-        if self.data[index] >= self.data[parent_index] { return; }
-        else {
-            self.data.swap(index, parent_index);
-            self.swim(parent_index);
-            }
-        }
+        if self.cas(parent_index, index) { self.swim(parent_index) }
+    }
+
+    fn cas(&mut self, parrent: usize, child: usize) -> bool {
+        let is_bigger = self.data[child] <= self.data[parrent];
+        if is_bigger { self.data.swap(child, parrent); }
+        is_bigger
+    }
 
     fn sink(&mut self, index: usize) {
-        let left_index = Heap::<T>::left_of(index);
-        let right_index = Heap::<T>::right_of(index);
-        if left_index >= self.capacity && right_index >= self.capacity { return; }
-        if left_index >= self.capacity { // no left branch
-            if self.data[right_index] >= self.data[index] { return; }
-            self.data.swap(right_index, index);
-            self.sink(right_index);
-            }
-        else if right_index >= self.capacity { // no right branch
-            if self.data[left_index] >= self.data[index] { return; }
-            self.data.swap(left_index, index);
-            self.sink(left_index);
-            }
-        else { // both branches exist
-            if self.data[left_index] < self.data[right_index] { // going left
-                if self.data[left_index] >= self.data[index] { return; }
-                self.data.swap(left_index, index);
-                self.sink(left_index);
-                }
-            else { // going right
-                if self.data[right_index] >= self.data[index] { return; }
-                self.data.swap(right_index, index);
-                self.sink(index);
-                }
-            }
+        let trysink = |x : &mut Heap<T>, child| {
+            if x.cas(index, child) { x.sink(child) }
+        };
+        let (left_index, right_index) = Heap::<T>::children_of(index);
+        if right_index >= self.capacity { return; }
+        if left_index >= self.capacity { trysink(self, left_index) }
+        else if right_index >= self.capacity { trysink(self, right_index) }
+        else if self.data[left_index] < self.data[right_index] { trysink(self, left_index) }
+        else { trysink(self, right_index) }
+    }
+
+    pub fn sort(&mut self) -> Vec<T>{
+        let mut a = Vec::new();
+        while !self.is_empty() {
+            a.push(self.remove_top());
         }
-    pub fn sort(&mut self) {
-        loop {
-            if self.capacity == 0 { break; }
-            self.remove_top();
-            }
         self.capacity = self.data.len();
+        a
         }
+
     pub fn remove_top(&mut self) -> T {
         let top = self.data[0].clone();
         self.capacity -= 1;
@@ -131,9 +123,10 @@ fn test1() {
     println!("--> {}", heap);
 
     let mut sheap = Heap::from_vec(vec!["Erik", "Bente", "Anders", "Dorte", "Christine"]);
-    sheap.sort();
+    println!("Sorted: {:?}", sheap.sort());
     println!("Names: {}", sheap);
-    sheap.sort();
+    
+    println!("Sorted: {:?}", sheap.sort());
     println!("Names: {}", sheap);
     }
 
