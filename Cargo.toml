@@ -1,0 +1,7 @@
+[package]
+name = "program"
+version = "0.1.0"
+authors = ["Anders Kalhauge <anders@kalhauge.dk>"]
+edition = "2018"
+
+[dependencies]
